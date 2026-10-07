@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --bg-app: #F8F5EE;
+  --bg-surface: #FFFFFF;
+  --bg-surface-subtle: #FAF7F2;
+  --border-color: #EAF0F7;
+  --text-primary: #182235;
+  --text-muted: #6B7280;
+}
+
+.dark {
+  --bg-app: #08101F;
+  --bg-surface: #0F1C36;
+  --bg-surface-subtle: #132344;
+  --border-color: #1C3058;
+  --text-primary: #F8FAFC;
+  --text-muted: #94A3B8;
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    background-color: var(--bg-app);
+    color: var(--text-primary);
+    transition: background-color 0.25s ease, color 0.25s ease;
+  }
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #233A66;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', monospace;
+}

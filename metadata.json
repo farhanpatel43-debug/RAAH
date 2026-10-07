@@ -1,0 +1,8 @@
+{
+  "name": "RAAH - Your Path to Career",
+  "description": "Personalized career-planning and learning platform for college CSE/AI/ML students featuring 4-year roadmaps, skill tracking, and practice.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
