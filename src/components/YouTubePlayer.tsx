@@ -4,19 +4,10 @@ import {
   RefreshCw,
   CheckCircle2,
   ExternalLink,
-  Volume2,
   Maximize2,
   Sparkles,
   Loader2,
-  Tv,
 } from 'lucide-react';
-
-declare global {
-  interface Window {
-    YT: any;
-    onYouTubeIframeAPIReady: () => void;
-  }
-}
 
 interface YouTubePlayerProps {
   videoId: string;
@@ -46,8 +37,7 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
 
   const containerRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const playerInstanceRef = useRef<any>(null);
-  const progressIntervalRef = useRef<any>(null);
+  const timerRef = useRef<any>(null);
 
   // Sync internal completed state if prop changes
   useEffect(() => {
@@ -75,114 +65,47 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
       return;
     }
 
-    // Set up YouTube IFrame API script if not yet loaded
-    let scriptTag = document.getElementById('youtube-iframe-api');
-    if (!scriptTag) {
-      const tag = document.createElement('script');
-      tag.id = 'youtube-iframe-api';
-      tag.src = 'https://www.youtube.com/iframe_api';
-      const firstScriptTag = document.getElementsByTagName('script')[0];
-      firstScriptTag?.parentNode?.insertBefore(tag, firstScriptTag);
-    }
-
-    const initPlayer = () => {
-      if (window.YT && window.YT.Player && iframeRef.current) {
-        try {
-          // Destroy previous player instance if any
-          if (playerInstanceRef.current && typeof playerInstanceRef.current.destroy === 'function') {
-            playerInstanceRef.current.destroy();
-          }
-
-          playerInstanceRef.current = new window.YT.Player(iframeRef.current, {
-            events: {
-              onReady: () => {
-                setIsLoading(false);
-              },
-              onStateChange: (event: any) => {
-                // YT.PlayerState: -1 (unstarted), 0 (ended), 1 (playing), 2 (paused), 3 (buffering), 5 (video cued)
-                if (event.data === 1) {
-                  setPlayerState('playing');
-                  // Start progress tracking
-                  startProgressTracking();
-                } else if (event.data === 2) {
-                  setPlayerState('paused');
-                  stopProgressTracking();
-                } else if (event.data === 0) {
-                  // Video finished!
-                  setPlayerState('ended');
-                  stopProgressTracking();
-                  handleMarkCompleted();
-                }
-              },
-              onError: (event: any) => {
-                // 101 or 150 = The owner of the requested video does not allow it to be played in embedded players.
-                // 100 = Video requested not found.
-                // 2 = Invalid parameter.
-                console.warn('YouTube Player error code:', event.data);
-                setHasError(true);
-                setErrorMessage('This video is currently unavailable.');
-                setIsLoading(false);
-                if (onUnavailable) {
-                  onUnavailable();
-                }
-              },
-            },
-          });
-        } catch (err) {
-          console.warn('YT.Player initialization note:', err);
-          setIsLoading(false);
-        }
-      }
-    };
-
-    if (window.YT && window.YT.Player) {
-      // Small timeout to allow iframe DOM rendering
-      const timer = setTimeout(initPlayer, 400);
-      return () => clearTimeout(timer);
-    } else {
-      const prevCallback = window.onYouTubeIframeAPIReady;
-      window.onYouTubeIframeAPIReady = () => {
-        if (prevCallback) prevCallback();
-        initPlayer();
-      };
-    }
+    // Safety timeout to dismiss loading spinner if iframe load event takes long
+    const fallbackTimer = setTimeout(() => {
+      setIsLoading(false);
+    }, 2500);
 
     return () => {
-      stopProgressTracking();
-      if (playerInstanceRef.current && typeof playerInstanceRef.current.destroy === 'function') {
-        try {
-          playerInstanceRef.current.destroy();
-        } catch {}
+      clearTimeout(fallbackTimer);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
       }
     };
-  }, [videoId]);
+  }, [videoId, isCompleted]);
 
-  const startProgressTracking = () => {
-    stopProgressTracking();
-    progressIntervalRef.current = setInterval(() => {
-      if (playerInstanceRef.current && typeof playerInstanceRef.current.getCurrentTime === 'function') {
-        try {
-          const currentTime = playerInstanceRef.current.getCurrentTime();
-          const totalDuration = playerInstanceRef.current.getDuration();
-          if (totalDuration > 0) {
-            const pct = Math.min(100, Math.round((currentTime / totalDuration) * 100));
-            setWatchProgressPercent((prev) => Math.max(prev, pct));
-            // If watched over 75%, automatically consider video completed if not already marked
-            if (pct >= 75 && !isCompletedState) {
-              handleMarkCompleted();
-            }
+  // Listen to postMessage from YouTube IFrame
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (!event.origin.includes('youtube.com')) return;
+      try {
+        const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+        if (data && data.event === 'onStateChange') {
+          // YT.PlayerState: 1 = playing, 2 = paused, 0 = ended
+          if (data.info === 1) {
+            setPlayerState('playing');
+          } else if (data.info === 2) {
+            setPlayerState('paused');
+          } else if (data.info === 0) {
+            setPlayerState('ended');
+            handleMarkCompleted();
           }
-        } catch {}
+        }
+      } catch {
+        // Not a JSON message, ignore
       }
-    }, 2000);
-  };
+    };
 
-  const stopProgressTracking = () => {
-    if (progressIntervalRef.current) {
-      clearInterval(progressIntervalRef.current);
-      progressIntervalRef.current = null;
-    }
-  };
+    window.addEventListener('message', handleMessage);
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
+  }, []);
 
   const handleMarkCompleted = () => {
     if (!isCompletedState) {
@@ -195,10 +118,18 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
   };
 
   const handleIframeLoaded = () => {
-    // If API ready didn't trigger, ensure loading state clears
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 600);
+    setIsLoading(false);
+    // Tell YouTube iframe to enable postMessage events
+    if (iframeRef.current && iframeRef.current.contentWindow) {
+      try {
+        iframeRef.current.contentWindow.postMessage(
+          JSON.stringify({ event: 'listening' }),
+          '*'
+        );
+      } catch {
+        // Cross-origin safe
+      }
+    }
   };
 
   const handleFullscreen = () => {
@@ -256,10 +187,8 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
     );
   }
 
-  // Valid YouTube video embed URL
-  const embedUrl = `https://www.youtube.com/embed/${videoId}?enablejsapi=1&origin=${encodeURIComponent(
-    typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'
-  )}&rel=0&modestbranding=1&iv_load_policy=3&playsinline=1`;
+  // Valid YouTube video embed URL with HTML5 iframe embed
+  const embedUrl = `https://www.youtube.com/embed/${videoId}?enablejsapi=1&rel=0&modestbranding=1&iv_load_policy=3&playsinline=1`;
 
   return (
     <div
@@ -323,12 +252,13 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
         {isLoading && (
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#0B1B36] text-white space-y-3">
             <Loader2 className="w-8 h-8 text-[#F2B544] animate-spin" />
-            <p className="text-xs text-gray-300 font-medium">Connecting to YouTube Player...</p>
+            <p className="text-xs text-gray-300 font-medium">Loading YouTube Video...</p>
           </div>
         )}
 
-        {/* Real YouTube IFrame Embed */}
+        {/* Real Native YouTube IFrame Embed */}
         <iframe
+          key={videoId}
           ref={iframeRef}
           src={embedUrl}
           title={title}

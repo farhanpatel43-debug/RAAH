@@ -419,6 +419,7 @@ print(f"Model Intercept: {model.intercept_:.2f}")`;
           {currentVideo ? (
             <div className="space-y-2">
               <YouTubePlayer
+                key={currentVideo.videoId}
                 videoId={currentVideo.videoId}
                 title={currentVideo.title}
                 topic={currentVideo.topic}
