@@ -15,6 +15,9 @@ export type NavTab =
   | 'projects' 
   | 'career-guidance' 
   | 'ai-agent'
+  | 'attendance'
+  | 'certificates'
+  | 'journey'
   | 'settings';
 
 export type ThemeMode = 'light' | 'dark';
@@ -33,6 +36,65 @@ export interface UserProfile {
   readinessScore: number;
   streakDays: number;
   xp: number;
+}
+
+export interface SubjectAttendance {
+  id: string;
+  subjectCode: string;
+  name: string;
+  teacher?: string;
+  totalClasses: number;
+  attendedClasses: number;
+  minimumRequired: number; // typically 75%
+  lastAction?: 'present' | 'absent' | 'cancelled';
+  credits?: number;
+}
+
+export interface XpLevel {
+  level: number;
+  title: string;
+  minXp: number;
+  maxXp: number;
+  badge: string;
+  color: string;
+  perks: string[];
+}
+
+export interface GeneratedProject {
+  id: string;
+  title: string;
+  codename: string;
+  category: string;
+  yearTarget: string;
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+  techStack: string[];
+  duration: string;
+  problemStatement: string;
+  architectureSummary: string;
+  phases: {
+    phase: string;
+    title: string;
+    deliverables: string[];
+  }[];
+  resumeBulletPoints: string[];
+  interviewQuestions: {
+    question: string;
+    answerKey: string;
+  }[];
+  githubTemplateUrl?: string;
+}
+
+export interface DigitalCertificate {
+  certificateId: string;
+  studentName: string;
+  degree: string;
+  college: string;
+  trackTitle: string;
+  issueDate: string;
+  honors: string;
+  readinessScore: number;
+  xpEarned: number;
+  verificationCode: string;
 }
 
 export interface RoadmapYear {

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { NavTab, RecommendedProject, UserProfile } from '../types';
+import { NavTab, RecommendedProject, UserProfile, GeneratedProject } from '../types';
 import { recommendedProjects } from '../data/mockData';
+import { ProjectGeneratorModal } from '../components/ProjectGeneratorModal';
 import {
   FolderGit2,
   CheckCircle2,
@@ -12,16 +13,21 @@ import {
   Code2,
   GitBranch,
   Terminal,
+  Sparkles,
+  Cpu,
+  BookmarkPlus,
 } from 'lucide-react';
 
 interface ProjectsPageProps {
   user: UserProfile;
   onNavigate: (tab: NavTab) => void;
+  onAddXp?: (amount: number, activity?: any, details?: any) => void;
 }
 
-export const ProjectsPage: React.FC<ProjectsPageProps> = ({ user, onNavigate }) => {
+export const ProjectsPage: React.FC<ProjectsPageProps> = ({ user, onNavigate, onAddXp }) => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [activeProject, setActiveProject] = useState<RecommendedProject | null>(null);
+  const [generatorOpen, setGeneratorOpen] = useState(false);
 
   const categories = [
     'All',
@@ -41,15 +47,29 @@ export const ProjectsPage: React.FC<ProjectsPageProps> = ({ user, onNavigate }) 
   });
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 text-[#182235]">
-      {/* Title & Subtitle matching reference */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#14264A]">
-          Recommended Projects
-        </h1>
-        <p className="text-sm text-[#6B7280] mt-1">
-          Build real-world projects and strengthen your portfolio
-        </p>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 text-[#182235] dark:text-[#F1F5F9]">
+      {/* Title & AI Generator Hero Banner */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#14264A] dark:text-white">
+            Projects & Blueprint Generator
+          </h1>
+          <p className="text-sm text-[#6B7280] dark:text-gray-400 mt-1">
+            Build production-grade capstone and mini-projects tailored to your branch and target career.
+          </p>
+        </div>
+
+        {/* AI Generator Trigger Button */}
+        <button
+          onClick={() => setGeneratorOpen(true)}
+          className="px-5 py-3 rounded-2xl bg-gradient-to-r from-[#14264A] via-[#1E386D] to-[#14264A] hover:opacity-95 text-white dark:bg-[#F2B544] dark:text-[#14264A] border-2 border-[#F2B544] shadow-md flex items-center gap-2.5 font-black text-xs transition-all hover:scale-102 cursor-pointer self-start md:self-auto"
+        >
+          <Cpu className="w-4 h-4 text-[#F2B544] dark:text-[#14264A]" />
+          <span>Launch AI Project Generator</span>
+          <span className="text-[10px] bg-[#F2B544] text-[#14264A] px-1.5 py-0.2 rounded font-black">
+            +40 XP
+          </span>
+        </button>
       </div>
 
       {/* Category Pills matching reference */}
@@ -230,6 +250,13 @@ export const ProjectsPage: React.FC<ProjectsPageProps> = ({ user, onNavigate }) 
           </div>
         </div>
       )}
+      {/* AI Project Generator Modal */}
+      <ProjectGeneratorModal
+        user={user}
+        isOpen={generatorOpen}
+        onClose={() => setGeneratorOpen(false)}
+        onAddXp={onAddXp}
+      />
     </div>
   );
 };

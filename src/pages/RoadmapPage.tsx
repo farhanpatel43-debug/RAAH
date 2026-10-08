@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { NavTab, UserProfile, RoadmapYear } from '../types';
 import { fourYearRoadmap } from '../data/mockData';
+import { FourYearJourneyVisualizer } from '../components/FourYearJourneyVisualizer';
 import {
   CheckCircle2,
   Clock,
@@ -13,6 +14,7 @@ import {
   Target,
   ChevronRight,
   BookOpen,
+  TrendingUp,
 } from 'lucide-react';
 
 interface RoadmapPageProps {
@@ -22,6 +24,7 @@ interface RoadmapPageProps {
 
 export const RoadmapPage: React.FC<RoadmapPageProps> = ({ user, onNavigate }) => {
   const [selectedYearIndex, setSelectedYearIndex] = useState(2); // Year 3 active by default
+  const [roadmapMode, setRoadmapMode] = useState<'journey' | 'syllabus'>('journey');
 
   const currentYearData = fourYearRoadmap[selectedYearIndex];
   const currentSemester = currentYearData.semesters[0]; // Sem 5
@@ -30,17 +33,48 @@ export const RoadmapPage: React.FC<RoadmapPageProps> = ({ user, onNavigate }) =>
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8 text-[#182235] dark:text-[#F1F5F9]">
-      {/* Title & Subtitle matching reference */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#14264A] dark:text-white">
-          My 4-Year Roadmap
-        </h1>
-        <p className="text-sm text-[#6B7280] dark:text-gray-400 mt-1">
-          Your complete journey from 1st year to job ready
-        </p>
+      {/* Title & Mode Switcher */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#14264A] dark:text-white">
+            My 4-Year Engineering Journey & Roadmap
+          </h1>
+          <p className="text-sm text-[#6B7280] dark:text-gray-400 mt-1">
+            Track all 8 semesters, syllabus milestones, and career launch checkpoints.
+          </p>
+        </div>
+
+        <div className="flex rounded-2xl bg-[#EAF0F7] dark:bg-[#14264A] p-1 text-xs font-bold shrink-0 self-start sm:self-auto">
+          <button
+            onClick={() => setRoadmapMode('journey')}
+            className={`px-4 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
+              roadmapMode === 'journey'
+                ? 'bg-white dark:bg-[#08101F] text-[#14264A] dark:text-[#F2B544] shadow-xs font-black'
+                : 'text-[#6B7280] dark:text-gray-400'
+            }`}
+          >
+            <TrendingUp className="w-3.5 h-3.5 text-[#F2B544]" />
+            <span>4-Year Journey Stepper</span>
+          </button>
+          <button
+            onClick={() => setRoadmapMode('syllabus')}
+            className={`px-4 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
+              roadmapMode === 'syllabus'
+                ? 'bg-white dark:bg-[#08101F] text-[#14264A] dark:text-[#F2B544] shadow-xs font-black'
+                : 'text-[#6B7280] dark:text-gray-400'
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5 text-[#F2B544]" />
+            <span>Curriculum Syllabus</span>
+          </button>
+        </div>
       </div>
 
-      {/* Top 4 Progress Cards matching reference */}
+      {roadmapMode === 'journey' ? (
+        <FourYearJourneyVisualizer user={user} onNavigateToTab={onNavigate} />
+      ) : (
+        <>
+          {/* Top 4 Progress Cards matching reference */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {fourYearRoadmap.map((year, idx) => {
           const isSelected = selectedYearIndex === idx;
@@ -268,6 +302,8 @@ export const RoadmapPage: React.FC<RoadmapPageProps> = ({ user, onNavigate }) =>
           </div>
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 };

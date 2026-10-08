@@ -15,8 +15,13 @@ import {
   ChevronRight,
   Bot,
   Database,
+  UserCheck,
+  TrendingUp,
+  Award,
+  Trophy,
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import { getUserLevel } from '../data/levelsData';
 
 interface SidebarProps {
   currentTab: NavTab;
@@ -37,14 +42,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+  const userLevel = getUserLevel(user.xp);
 
   const menuItems: { id: NavTab; label: string; icon: React.FC<{ className?: string }>; highlight?: boolean }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'roadmap', label: 'My Roadmap', icon: Map },
-    { id: 'learning', label: 'Learning', icon: BookOpen },
+    { id: 'journey', label: '4-Year Journey', icon: TrendingUp },
+    { id: 'attendance', label: 'College Attendance', icon: UserCheck },
+    { id: 'learning', label: 'Learning & Videos', icon: BookOpen },
     { id: 'quizzes', label: 'Quizzes', icon: HelpCircle },
     { id: 'coding', label: 'Coding Practice', icon: Code2 },
-    { id: 'projects', label: 'Projects', icon: FolderGit2 },
+    { id: 'projects', label: 'Projects & Generator', icon: FolderGit2 },
+    { id: 'certificates', label: 'Digital Certificate', icon: Award },
     { id: 'career-guidance', label: 'Career Guidance', icon: Compass },
     { id: 'ai-agent', label: 'AI Career Agent', icon: Bot, highlight: true },
     { id: 'settings', label: 'Settings', icon: Settings },

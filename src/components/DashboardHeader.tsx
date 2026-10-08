@@ -13,15 +13,25 @@ import {
   BookOpen,
   Bot,
   Database,
+  Trophy,
+  Zap,
+  UserCheck,
+  TrendingUp,
 } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { useTheme } from '../context/ThemeContext';
+import { getUserLevel } from '../data/levelsData';
 
 interface DashboardHeaderProps {
   user: UserProfile;
   onNavigate: (tab: NavTab) => void;
   onLogout: () => void;
   onOpenMobileSidebar: () => void;
+  onOpenWhatShouldIDo?: () => void;
+  onOpenXpLevels?: () => void;
+  onOpenStreak?: () => void;
+  onOpenCertificate?: () => void;
+  onOpenAttendance?: () => void;
 }
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
@@ -29,11 +39,18 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   onNavigate,
   onLogout,
   onOpenMobileSidebar,
+  onOpenWhatShouldIDo,
+  onOpenXpLevels,
+  onOpenStreak,
+  onOpenCertificate,
+  onOpenAttendance,
 }) => {
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+
+  const userLevel = getUserLevel(user.xp);
 
   const mockNotifications = [
     {
@@ -77,22 +94,50 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         </div>
       </div>
 
-      {/* Right side: Streak pill, ThemeToggle, Notification bell, Farhan profile */}
-      <div className="flex items-center space-x-2 sm:space-x-3">
+      {/* Right side: What Should I Do Now, XP Level, Streak, AI Agent, ThemeToggle, Notifications, Profile */}
+      <div className="flex items-center space-x-2 sm:space-x-2.5">
+        {/* 'What Should I Do Now?' High Leverage Action Button */}
+        <button
+          onClick={onOpenWhatShouldIDo}
+          className="relative group px-3 sm:px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#14264A] via-[#1E386D] to-[#14264A] text-white text-xs font-black border-2 border-[#F2B544] shadow-md hover:scale-105 transition-all flex items-center gap-1.5 cursor-pointer"
+          title="Analyze real-time progress and get your exact next high-leverage step"
+        >
+          <span className="flex h-2 w-2 relative">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#F2B544] opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-[#F2B544]" />
+          </span>
+          <Zap className="w-3.5 h-3.5 text-[#F2B544] fill-[#F2B544]" />
+          <span className="hidden sm:inline">What Should I Do Now?</span>
+          <span className="sm:hidden">Next Action</span>
+        </button>
+
+        {/* XP + Levels Interactive Badge */}
+        <button
+          onClick={onOpenXpLevels}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-900/60 border border-amber-300/80 dark:border-amber-700/60 rounded-full text-xs font-black text-amber-900 dark:text-[#F2B544] cursor-pointer transition-all shadow-2xs"
+          title={`Level ${userLevel.level}: ${userLevel.title} (${user.xp} Total XP) - Click to inspect 8 tiers`}
+        >
+          <Trophy className="w-3.5 h-3.5 text-[#F2B544]" />
+          <span>Lvl {userLevel.level}</span>
+          <span className="text-[10px] text-amber-700 dark:text-gray-300 font-bold hidden md:inline">
+            • {user.xp} XP
+          </span>
+        </button>
+
         {/* Streak indicator */}
-        <div 
-          onClick={() => onNavigate('dashboard')}
+        <button 
+          onClick={onOpenStreak || (() => onNavigate('dashboard'))}
           className="flex items-center gap-1.5 px-3 py-1.5 bg-[#FEF6E4] dark:bg-[#2A2312] border border-[#F2B544]/40 rounded-full text-xs font-bold text-[#B45309] dark:text-[#F2B544] cursor-pointer hover:bg-[#FDE68A]/30 transition-colors"
-          title="6-day active learning streak"
+          title="7-day active learning streak - Click to open Streak Center"
         >
           <Flame className="w-4 h-4 text-[#F2B544] fill-[#F2B544]" />
-          <span>{user.streakDays} Days</span>
-        </div>
+          <span>{user.streakDays}d</span>
+        </button>
 
         {/* AI Career Advisor Quick Button */}
         <button
           onClick={() => onNavigate('ai-agent')}
-          className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-[#14264A] hover:bg-[#1C3563] text-[#F2B544] text-xs font-bold rounded-xl border border-[#F2B544]/30 shadow-xs cursor-pointer transition-all"
+          className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-[#14264A] hover:bg-[#1C3563] text-[#F2B544] text-xs font-bold rounded-xl border border-[#F2B544]/30 shadow-xs cursor-pointer transition-all"
         >
           <Bot className="w-4 h-4" />
           <span>Ask AI Agent</span>
@@ -221,6 +266,38 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 >
                   <Award className="w-3.5 h-3.5 text-[#6B7280] dark:text-gray-400" />
                   <span>Reconfigure Career Path</span>
+                </button>
+                <button
+                  onClick={() => {
+                    if (onOpenCertificate) onOpenCertificate();
+                    else onNavigate('certificates');
+                    setProfileOpen(false);
+                  }}
+                  className="w-full px-4 py-2 text-left text-xs font-semibold text-[#14264A] dark:text-gray-200 hover:bg-[#F8F5EE] dark:hover:bg-[#14264A] flex items-center gap-2 cursor-pointer"
+                >
+                  <Award className="w-3.5 h-3.5 text-[#F2B544]" />
+                  <span>🏅 Verifiable Digital Certificate</span>
+                </button>
+                <button
+                  onClick={() => {
+                    if (onOpenAttendance) onOpenAttendance();
+                    else onNavigate('attendance');
+                    setProfileOpen(false);
+                  }}
+                  className="w-full px-4 py-2 text-left text-xs font-semibold text-[#14264A] dark:text-gray-200 hover:bg-[#F8F5EE] dark:hover:bg-[#14264A] flex items-center gap-2 cursor-pointer"
+                >
+                  <UserCheck className="w-3.5 h-3.5 text-emerald-500" />
+                  <span>College Attendance & Bunk Margin</span>
+                </button>
+                <button
+                  onClick={() => {
+                    onNavigate('journey');
+                    setProfileOpen(false);
+                  }}
+                  className="w-full px-4 py-2 text-left text-xs font-semibold text-[#14264A] dark:text-gray-200 hover:bg-[#F8F5EE] dark:hover:bg-[#14264A] flex items-center gap-2 cursor-pointer"
+                >
+                  <TrendingUp className="w-3.5 h-3.5 text-indigo-500" />
+                  <span>4-Year Journey Visualization</span>
                 </button>
                 <button
                   onClick={() => {

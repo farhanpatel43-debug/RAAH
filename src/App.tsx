@@ -24,7 +24,14 @@ import { CareerGuidancePage } from './pages/CareerGuidancePage';
 import { CareersExplorePage } from './pages/CareersExplorePage';
 import { AboutPage } from './pages/AboutPage';
 import { SettingsPage } from './pages/SettingsPage';
-import { Bot, Sparkles, X } from 'lucide-react';
+import { AttendanceTracker } from './components/AttendanceTracker';
+import { FourYearJourneyVisualizer } from './components/FourYearJourneyVisualizer';
+import { XpLevelsModal } from './components/XpLevelsModal';
+import { StreakCenterModal } from './components/StreakCenterModal';
+import { ProjectGeneratorModal } from './components/ProjectGeneratorModal';
+import { DigitalCertificateModal } from './components/DigitalCertificateModal';
+import { WhatShouldIDoNowModal } from './components/WhatShouldIDoNowModal';
+import { Bot, Sparkles, X, Award } from 'lucide-react';
 
 function AppContent() {
   const { theme } = useTheme();
@@ -50,6 +57,13 @@ function AppContent() {
 
   // Floating AI Drawer state
   const [aiDrawerOpen, setAiDrawerOpen] = useState(false);
+
+  // Global feature modals states
+  const [whatShouldIDoOpen, setWhatShouldIDoOpen] = useState(false);
+  const [xpLevelsOpen, setXpLevelsOpen] = useState(false);
+  const [streakModalOpen, setStreakModalOpen] = useState(false);
+  const [certificateOpen, setCertificateOpen] = useState(false);
+  const [projectGeneratorOpen, setProjectGeneratorOpen] = useState(false);
 
   // Sync user updates to localStorage and Supabase database
   useEffect(() => {
@@ -123,6 +137,9 @@ function AppContent() {
   const isDashboardRoute = user && [
     'dashboard',
     'roadmap',
+    'journey',
+    'attendance',
+    'certificates',
     'learning',
     'quizzes',
     'coding',
@@ -153,14 +170,75 @@ function AppContent() {
               onNavigate={handleNavigate}
               onLogout={handleLogout}
               onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
+              onOpenWhatShouldIDo={() => setWhatShouldIDoOpen(true)}
+              onOpenXpLevels={() => setXpLevelsOpen(true)}
+              onOpenStreak={() => setStreakModalOpen(true)}
+              onOpenCertificate={() => setCertificateOpen(true)}
+              onOpenAttendance={() => setCurrentTab('attendance')}
             />
 
             <main className="flex-1 pb-12">
               {currentTab === 'dashboard' && (
-                <DashboardPage user={user} onNavigate={handleNavigate} />
+                <DashboardPage
+                  user={user}
+                  onNavigate={handleNavigate}
+                  onOpenWhatShouldIDo={() => setWhatShouldIDoOpen(true)}
+                  onOpenXpLevels={() => setXpLevelsOpen(true)}
+                  onOpenStreak={() => setStreakModalOpen(true)}
+                  onOpenCertificate={() => setCertificateOpen(true)}
+                  onOpenAttendance={() => setCurrentTab('attendance')}
+                  onOpenProjectGenerator={() => setProjectGeneratorOpen(true)}
+                />
               )}
               {currentTab === 'roadmap' && (
                 <RoadmapPage user={user} onNavigate={handleNavigate} />
+              )}
+              {currentTab === 'journey' && (
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+                  <FourYearJourneyVisualizer user={user} onNavigateToTab={handleNavigate} />
+                </div>
+              )}
+              {currentTab === 'attendance' && (
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+                  <AttendanceTracker user={user} onAddXp={handleAddXp} />
+                </div>
+              )}
+              {currentTab === 'certificates' && (
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <h1 className="text-2xl sm:text-3xl font-extrabold text-[#14264A] dark:text-white">
+                        Digital Certificates & Verified Credentials
+                      </h1>
+                      <p className="text-sm text-[#6B7280] dark:text-gray-400 mt-1">
+                        Accredited credential issued by RAAH Curriculum & Placement Board.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setCertificateOpen(true)}
+                      className="px-5 py-2.5 bg-[#14264A] hover:bg-[#0B1B36] text-white dark:bg-[#F2B544] dark:text-[#14264A] rounded-xl text-xs font-black shadow-sm cursor-pointer"
+                    >
+                      View & Print Official Certificate
+                    </button>
+                  </div>
+                  <div className="bg-white dark:bg-[#0F1D38] p-8 rounded-3xl border border-[#EAF0F7] dark:border-[#1C2E52] text-center space-y-4">
+                    <div className="w-16 h-16 rounded-full bg-amber-50 dark:bg-amber-950/40 text-[#F2B544] flex items-center justify-center mx-auto">
+                      <Award className="w-8 h-8" />
+                    </div>
+                    <h2 className="text-xl font-extrabold text-[#14264A] dark:text-white">
+                      {user.branch} Mastery Distinction
+                    </h2>
+                    <p className="text-xs text-[#6B7280] dark:text-gray-400 max-w-lg mx-auto">
+                      Issued to <strong>{user.name}</strong> ({user.college}) with {user.readinessScore}% Career Readiness Score and {user.xp.toLocaleString()} XP.
+                    </p>
+                    <button
+                      onClick={() => setCertificateOpen(true)}
+                      className="px-6 py-3 rounded-2xl bg-[#14264A] hover:bg-[#0B1B36] text-white dark:bg-[#F2B544] dark:text-[#14264A] text-xs font-black transition-all cursor-pointer shadow-md"
+                    >
+                      Open Verifiable Credential Modal
+                    </button>
+                  </div>
+                </div>
               )}
               {currentTab === 'learning' && (
                 <LearningPage
@@ -187,7 +265,7 @@ function AppContent() {
                 />
               )}
               {currentTab === 'projects' && (
-                <ProjectsPage user={user} onNavigate={handleNavigate} />
+                <ProjectsPage user={user} onNavigate={handleNavigate} onAddXp={handleAddXp} />
               )}
               {currentTab === 'career-guidance' && (
                 <CareerGuidancePage user={user} onNavigate={handleNavigate} />
@@ -305,6 +383,52 @@ function AppContent() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Global Feature Modals */}
+      {user && (
+        <>
+          <WhatShouldIDoNowModal
+            isOpen={whatShouldIDoOpen}
+            onClose={() => setWhatShouldIDoOpen(false)}
+            user={user}
+            onNavigate={handleNavigate}
+            onOpenAttendance={() => {
+              setWhatShouldIDoOpen(false);
+              setCurrentTab('attendance');
+            }}
+            onOpenProjectGenerator={() => {
+              setWhatShouldIDoOpen(false);
+              setProjectGeneratorOpen(true);
+            }}
+          />
+
+          <XpLevelsModal
+            isOpen={xpLevelsOpen}
+            onClose={() => setXpLevelsOpen(false)}
+            user={user}
+          />
+
+          <StreakCenterModal
+            isOpen={streakModalOpen}
+            onClose={() => setStreakModalOpen(false)}
+            user={user}
+            onAddXp={handleAddXp}
+          />
+
+          <DigitalCertificateModal
+            isOpen={certificateOpen}
+            onClose={() => setCertificateOpen(false)}
+            user={user}
+          />
+
+          <ProjectGeneratorModal
+            isOpen={projectGeneratorOpen}
+            onClose={() => setProjectGeneratorOpen(false)}
+            user={user}
+            onAddXp={handleAddXp}
+          />
+        </>
       )}
     </div>
   );
