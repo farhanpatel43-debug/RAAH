@@ -163,7 +163,14 @@ function AppContent() {
                 <RoadmapPage user={user} onNavigate={handleNavigate} />
               )}
               {currentTab === 'learning' && (
-                <LearningPage onNavigate={handleNavigate} />
+                <LearningPage
+                  user={user}
+                  onNavigate={handleNavigate}
+                  onAddXp={(amount, activity, details) =>
+                    handleAddXp(amount, (activity as any) || 'video_completed', details || {})
+                  }
+                  onUpdateUser={setUser}
+                />
               )}
               {currentTab === 'quizzes' && (
                 <QuizzesPage
@@ -217,12 +224,14 @@ function AppContent() {
       ) : (
         // Public Website Experience
         <div className="flex flex-col min-h-screen">
-          <Navbar
-            currentTab={currentTab}
-            onNavigate={handleNavigate}
-            user={user}
-            onLogout={handleLogout}
-          />
+          {currentTab !== 'login' && currentTab !== 'signup' && (
+            <Navbar
+              currentTab={currentTab}
+              onNavigate={handleNavigate}
+              user={user}
+              onLogout={handleLogout}
+            />
+          )}
 
           <main className="flex-1">
             {currentTab === 'home' && <LandingPage onNavigate={handleNavigate} />}
@@ -251,7 +260,9 @@ function AppContent() {
             )}
           </main>
 
-          <Footer onNavigate={handleNavigate} />
+          {currentTab !== 'login' && currentTab !== 'signup' && (
+            <Footer onNavigate={handleNavigate} />
+          )}
         </div>
       )}
 

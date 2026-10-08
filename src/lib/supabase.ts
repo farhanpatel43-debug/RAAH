@@ -2,8 +2,8 @@ import { createClient } from '@supabase/supabase-js';
 import { UserProfile } from '../types';
 
 // Supabase configuration provided by user
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://inscaixmdstsgxmitocm.supabase.co';
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_uNErid5rGIbzYNOt6EsPiw__pdhN_gF';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://iosvwfpxfhjechyisarb.supabase.co';
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_wLa3KV3qNHhlFAad0yz_ZA_y78MCIGA';
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
@@ -244,3 +244,37 @@ function mapSupabaseToUserProfile(data: any): UserProfile {
     xp: typeof data.xp === 'number' ? data.xp : 250,
   };
 }
+
+/**
+ * Sign up with Supabase Auth
+ */
+export async function signUpWithSupabaseAuth(email: string, password: string, metadata?: Record<string, any>) {
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email: email.trim(),
+      password,
+      options: {
+        data: metadata,
+      },
+    });
+    return { data, error };
+  } catch (err: any) {
+    return { data: null, error: err };
+  }
+}
+
+/**
+ * Log in with Supabase Auth
+ */
+export async function loginWithSupabaseAuth(email: string, password: string) {
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+    return { data, error };
+  } catch (err: any) {
+    return { data: null, error: err };
+  }
+}
+

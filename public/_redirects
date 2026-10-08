@@ -1,0 +1,3 @@
+# Netlify SPA redirect rules
+/api/ai/agent  /.netlify/functions/agent  200
+/*             /index.html                200

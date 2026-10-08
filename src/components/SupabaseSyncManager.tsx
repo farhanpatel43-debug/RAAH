@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Database, CheckCircle2, AlertCircle, RefreshCw, Server, ShieldCheck, Key, ExternalLink, Code, Check, Eye, Table } from 'lucide-react';
+import { Database, CheckCircle2, AlertCircle, RefreshCw, Server, ShieldCheck, Key, ExternalLink, Code, Check, Eye, Table, Globe, Copy, Layers, Cpu } from 'lucide-react';
 import { supabase, syncUserProgressToSupabase, fetchRawSupabaseRecord, fetchAllSupabaseRecords } from '../lib/supabase';
 import { UserProfile } from '../types';
 
@@ -18,10 +18,11 @@ export const SupabaseSyncManager: React.FC<SupabaseSyncManagerProps> = ({ user, 
   const [loadingDb, setLoadingDb] = useState(false);
   const [liveRow, setLiveRow] = useState<any | null>(null);
   const [totalRowsCount, setTotalRowsCount] = useState<number | null>(null);
-  const [activeView, setActiveView] = useState<'status' | 'live-data' | 'sql-schema'>('status');
+  const [activeView, setActiveView] = useState<'status' | 'live-data' | 'sql-schema' | 'netlify'>('status');
   const [copiedSql, setCopiedSql] = useState(false);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
-  const projectId = 'inscaixmdstsgxmitocm';
+  const projectId = 'iosvwfpxfhjechyisarb';
   const apiUrl = `https://${projectId}.supabase.co`;
 
   // Fetch live row from Supabase on mount and whenever user changes
@@ -78,9 +79,9 @@ export const SupabaseSyncManager: React.FC<SupabaseSyncManagerProps> = ({ user, 
 
   const sqlSchemaCode = `-- ====================================================================
 -- RAAH CAREER OS - SUPABASE DATABASE INITIALIZATION SCRIPT
--- Project ID: inscaixmdstsgxmitocm
+-- Project ID: iosvwfpxfhjechyisarb
 -- Paste and run this script in your Supabase SQL Editor:
--- https://supabase.com/dashboard/project/inscaixmdstsgxmitocm/sql/new
+-- https://supabase.com/dashboard/project/iosvwfpxfhjechyisarb/sql/new
 -- ====================================================================
 
 -- 1. Create table for storing student profiles & learning progress
@@ -157,12 +158,24 @@ CREATE POLICY "Allow public read-write on quiz_submissions"
   FOR ALL
   TO public
   USING (true)
-  WITH CHECK (true);`;
+  WITH CHECK (true);
+
+-- 7. Grant schema & table permissions
+GRANT USAGE ON SCHEMA public TO anon, authenticated;
+GRANT ALL ON TABLE public.user_progress TO anon, authenticated;
+GRANT ALL ON TABLE public.activity_logs TO anon, authenticated;
+GRANT ALL ON TABLE public.quiz_submissions TO anon, authenticated;`;
 
   const copySqlToClipboard = () => {
     navigator.clipboard.writeText(sqlSchemaCode);
     setCopiedSql(true);
     setTimeout(() => setCopiedSql(false), 2500);
+  };
+
+  const copyText = (text: string, key: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKey(key);
+    setTimeout(() => setCopiedKey(null), 2000);
   };
 
   return (
@@ -247,6 +260,19 @@ CREATE POLICY "Allow public read-write on quiz_submissions"
         >
           <Code className="w-3.5 h-3.5" />
           <span>SQL Schema</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveView('netlify')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+            activeView === 'netlify'
+              ? 'bg-[#00AD9F]/20 text-[#00AD9F] border border-[#00AD9F]/40 dark:bg-[#00AD9F]/30 dark:text-[#38ef7d]'
+              : 'text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'
+          }`}
+        >
+          <Globe className="w-3.5 h-3.5 text-[#00AD9F]" />
+          <span>Netlify Deploy Ready</span>
         </button>
       </div>
 
@@ -427,6 +453,140 @@ CREATE POLICY "Allow public read-write on quiz_submissions"
           </div>
           <div className="p-4 bg-[#08101F] text-gray-200 rounded-2xl font-mono text-[11px] overflow-x-auto leading-relaxed border border-[#1C2E52] max-h-96">
             <pre>{sqlSchemaCode}</pre>
+          </div>
+        </div>
+      )}
+
+      {/* Tab 4: Netlify Deployment */}
+      {activeView === 'netlify' && (
+        <div className="space-y-4">
+          <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-[#00AD9F]/10 border border-[#00AD9F]/30 space-y-2">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-bold text-[#14264A] dark:text-white flex items-center gap-2">
+                <Globe className="w-4 h-4 text-[#00AD9F]" />
+                <span>Netlify Deployment Ready</span>
+              </h4>
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#00AD9F]/20 text-[#008f83] dark:text-[#38ef7d] border border-[#00AD9F]/40 flex items-center gap-1">
+                <Check className="w-3 h-3" /> Configured
+              </span>
+            </div>
+            <p className="text-xs text-[#6B7280] dark:text-gray-300 leading-relaxed">
+              All Netlify configuration files (<code className="px-1 py-0.5 bg-gray-200 dark:bg-gray-800 rounded font-mono text-[11px]">netlify.toml</code>, <code className="px-1 py-0.5 bg-gray-200 dark:bg-gray-800 rounded font-mono text-[11px]">public/_redirects</code>, and <code className="px-1 py-0.5 bg-gray-200 dark:bg-gray-800 rounded font-mono text-[11px]">netlify/functions/agent.mts</code>) have been created and verified.
+            </p>
+          </div>
+
+          {/* Build Settings Card */}
+          <div className="p-4 rounded-2xl bg-[#F8F5EE] dark:bg-[#08101F] border border-[#EAF0F7] dark:border-[#1C2E52] space-y-3">
+            <h5 className="text-xs font-bold uppercase tracking-wider text-[#14264A] dark:text-[#F2B544] flex items-center gap-1.5">
+              <Cpu className="w-3.5 h-3.5" />
+              <span>Netlify Site Build Settings</span>
+            </h5>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div className="p-3 bg-white dark:bg-[#0F1D38] rounded-xl border border-gray-200 dark:border-gray-800 flex items-center justify-between">
+                <div>
+                  <span className="text-gray-400 block text-[10px] font-medium">Build Command</span>
+                  <code className="font-mono font-bold text-[#14264A] dark:text-white">npm run build</code>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => copyText('npm run build', 'build_cmd')}
+                  className="px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium text-[11px] flex items-center gap-1 cursor-pointer"
+                >
+                  {copiedKey === 'build_cmd' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                  {copiedKey === 'build_cmd' ? 'Copied' : 'Copy'}
+                </button>
+              </div>
+
+              <div className="p-3 bg-white dark:bg-[#0F1D38] rounded-xl border border-gray-200 dark:border-gray-800 flex items-center justify-between">
+                <div>
+                  <span className="text-gray-400 block text-[10px] font-medium">Publish Directory</span>
+                  <code className="font-mono font-bold text-[#14264A] dark:text-white">dist</code>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => copyText('dist', 'publish_dir')}
+                  className="px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium text-[11px] flex items-center gap-1 cursor-pointer"
+                >
+                  {copiedKey === 'publish_dir' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                  {copiedKey === 'publish_dir' ? 'Copied' : 'Copy'}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Environment Variables to Set in Netlify */}
+          <div className="p-4 rounded-2xl bg-[#F8F5EE] dark:bg-[#08101F] border border-[#EAF0F7] dark:border-[#1C2E52] space-y-3">
+            <div className="flex items-center justify-between">
+              <h5 className="text-xs font-bold uppercase tracking-wider text-[#14264A] dark:text-[#F2B544] flex items-center gap-1.5">
+                <Key className="w-3.5 h-3.5" />
+                <span>Netlify Environment Variables (Site configuration &gt; Environment variables)</span>
+              </h5>
+            </div>
+            <div className="space-y-2">
+              <div className="p-3 bg-white dark:bg-[#0F1D38] rounded-xl border border-gray-200 dark:border-gray-800 flex items-center justify-between">
+                <div className="truncate mr-2">
+                  <span className="text-gray-400 block text-[10px] font-medium">VITE_SUPABASE_URL</span>
+                  <code className="font-mono text-xs font-semibold text-emerald-600 dark:text-emerald-400 truncate block">
+                    https://iosvwfpxfhjechyisarb.supabase.co
+                  </code>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => copyText('https://iosvwfpxfhjechyisarb.supabase.co', 'env_url')}
+                  className="px-2.5 py-1 shrink-0 rounded bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium text-[11px] flex items-center gap-1 cursor-pointer"
+                >
+                  {copiedKey === 'env_url' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                  {copiedKey === 'env_url' ? 'Copied' : 'Copy'}
+                </button>
+              </div>
+
+              <div className="p-3 bg-white dark:bg-[#0F1D38] rounded-xl border border-gray-200 dark:border-gray-800 flex items-center justify-between">
+                <div className="truncate mr-2">
+                  <span className="text-gray-400 block text-[10px] font-medium">VITE_SUPABASE_ANON_KEY</span>
+                  <code className="font-mono text-xs font-semibold text-emerald-600 dark:text-emerald-400 truncate block">
+                    sb_publishable_wLa3KV3qNHhlFAad0yz_ZA_y78MCIGA
+                  </code>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => copyText('sb_publishable_wLa3KV3qNHhlFAad0yz_ZA_y78MCIGA', 'env_key')}
+                  className="px-2.5 py-1 shrink-0 rounded bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium text-[11px] flex items-center gap-1 cursor-pointer"
+                >
+                  {copiedKey === 'env_key' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                  {copiedKey === 'env_key' ? 'Copied' : 'Copy'}
+                </button>
+              </div>
+
+              <div className="p-3 bg-white dark:bg-[#0F1D38] rounded-xl border border-gray-200 dark:border-gray-800 flex items-center justify-between">
+                <div className="truncate mr-2">
+                  <span className="text-gray-400 block text-[10px] font-medium">NODE_VERSION</span>
+                  <code className="font-mono text-xs font-semibold text-[#14264A] dark:text-white">
+                    20
+                  </code>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => copyText('20', 'env_node')}
+                  className="px-2.5 py-1 shrink-0 rounded bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium text-[11px] flex items-center gap-1 cursor-pointer"
+                >
+                  {copiedKey === 'env_node' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                  {copiedKey === 'env_node' ? 'Copied' : 'Copy'}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* 3 Step Deployment Instructions */}
+          <div className="p-4 rounded-2xl bg-[#F8F5EE] dark:bg-[#08101F] border border-[#EAF0F7] dark:border-[#1C2E52] space-y-2">
+            <h5 className="text-xs font-bold uppercase tracking-wider text-[#14264A] dark:text-[#F2B544] flex items-center gap-1.5">
+              <Layers className="w-3.5 h-3.5" />
+              <span>How to Deploy to Netlify in 3 Steps</span>
+            </h5>
+            <ol className="text-xs text-[#6B7280] dark:text-gray-300 space-y-1.5 list-decimal list-inside leading-relaxed">
+              <li>Push this repository to GitHub or GitLab.</li>
+              <li>In your <a href="https://app.netlify.com" target="_blank" rel="noopener noreferrer" className="text-[#00AD9F] font-bold underline inline-flex items-center gap-0.5"><span>Netlify Dashboard</span><ExternalLink className="w-2.5 h-2.5" /></a>, click <strong>"Add new site"</strong> &rarr; <strong>"Import an existing project"</strong>.</li>
+              <li>Select your repository. Netlify automatically reads <code className="px-1 py-0.5 bg-gray-200 dark:bg-gray-800 rounded font-mono text-[11px]">netlify.toml</code> for build settings, routing, and functions. Click <strong>"Deploy Site"</strong>!</li>
+            </ol>
           </div>
         </div>
       )}

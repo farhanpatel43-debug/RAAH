@@ -102,7 +102,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         <button
           onClick={() => onNavigate('settings')}
           className="hidden xl:flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 text-xs font-semibold rounded-xl border border-emerald-200 dark:border-emerald-800/60 cursor-pointer transition-all"
-          title="Connected to Supabase project: inscaixmdstsgxmitocm"
+          title="Connected to Supabase project: iosvwfpxfhjechyisarb"
         >
           <Database className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
           <span className="text-[11px]">Supabase Synced</span>

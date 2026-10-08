@@ -133,7 +133,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div
           onClick={() => onNavigate('settings')}
           className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-800/40 text-[11px] font-semibold text-emerald-800 dark:text-emerald-300 cursor-pointer hover:bg-emerald-100/70 transition-colors"
-          title="Supabase Connected (Project inscaixmdstsgxmitocm)"
+          title="Supabase Connected (Project iosvwfpxfhjechyisarb)"
         >
           <div className="flex items-center gap-1.5 truncate">
             <Database className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
