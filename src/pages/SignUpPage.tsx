@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { NavTab, UserProfile } from '../types';
 import { RaahLogo } from '../components/RaahLogo';
 import { defaultUserProfile } from '../data/mockData';
+import { createNewUserProfile, saveUserToStorage } from '../lib/userStore';
 import {
   User,
   Mail,
@@ -16,6 +17,7 @@ import {
   ChevronDown,
   Check,
   Loader2,
+  Sparkles,
 } from 'lucide-react';
 import { ThemeToggle } from '../components/ThemeToggle';
 import {
@@ -30,10 +32,11 @@ interface SignUpPageProps {
 }
 
 const degreesList = [
-  'B.Tech - Artificial Intelligence & Machine Learning (AI/ML)',
   'B.Tech - Computer Science & Engineering (CSE)',
+  'B.Tech - Artificial Intelligence & Machine Learning (AI/ML)',
   'B.Tech - Data Science',
   'B.Tech - Information Technology (IT)',
+  'B.Tech - Electronics & Communication (ECE)',
   'B.E. - Computer Science',
   'BCA / MCA',
   'Other Degree',
@@ -42,31 +45,41 @@ const degreesList = [
 const yearsList = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
 
 const careerInterestOptions = [
-  'Data Science',
+  'Software Development',
   'AI/ML',
+  'Data Science',
   'Web Development',
   'Cyber Security',
   'Cloud Computing',
-  'Software Development',
   'Other',
 ];
 
 export const SignUpPage: React.FC<SignUpPageProps> = ({ onNavigate, onSignUpSuccess }) => {
-  const [fullName, setFullName] = useState('Farhan Patel');
-  const [email, setEmail] = useState('farhanpatelpatel43@gmail.com');
-  const [password, setPassword] = useState('123456');
-  const [confirmPassword, setConfirmPassword] = useState('123456');
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const [college, setCollege] = useState('National Institute of Technology');
-  const [degree, setDegree] = useState('B.Tech - Artificial Intelligence & Machine Learning (AI/ML)');
-  const [currentYear, setCurrentYear] = useState('3rd Year');
+  const [college, setCollege] = useState('');
+  const [degree, setDegree] = useState('B.Tech - Computer Science & Engineering (CSE)');
+  const [currentYear, setCurrentYear] = useState('1st Year');
 
-  // Match screenshot where "Data Science" is selected by default
-  const [selectedInterests, setSelectedInterests] = useState<string[]>(['Data Science']);
+  const [selectedInterests, setSelectedInterests] = useState<string[]>(['Software Development']);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleFillDemo = () => {
+    setFullName('Farhan Patel');
+    setEmail('farhanpatelpatel43@gmail.com');
+    setPassword('123456');
+    setConfirmPassword('123456');
+    setCollege('National Institute of Technology');
+    setDegree('B.Tech - Artificial Intelligence & Machine Learning (AI/ML)');
+    setCurrentYear('3rd Year');
+    setSelectedInterests(['Data Science', 'AI/ML']);
+  };
 
   const toggleInterest = (interest: string) => {
     if (selectedInterests.includes(interest)) {
@@ -92,63 +105,51 @@ export const SignUpPage: React.FC<SignUpPageProps> = ({ onNavigate, onSignUpSucc
     setIsSubmitting(true);
 
     try {
-      const primaryCareer = selectedInterests[0] || 'Data Science';
-      const targetRole =
-        primaryCareer === 'Data Science'
-          ? 'Data Scientist'
-          : primaryCareer === 'AI/ML'
-          ? 'Machine Learning Engineer'
-          : primaryCareer === 'Web Development'
-          ? 'Full Stack Engineer'
-          : primaryCareer === 'Cyber Security'
-          ? 'Cybersecurity Specialist'
-          : primaryCareer === 'Cloud Computing'
-          ? 'Cloud Architect'
-          : 'Software Engineer';
-
-      const newUser: UserProfile = {
-        ...defaultUserProfile,
+      // Create a brand new, personalized user profile strictly using the new sign-in info
+      const newUser = createNewUserProfile({
         name: fullName.trim(),
-        email: email.trim().toLowerCase(),
-        college: college.trim() || 'National Institute of Technology',
+        email: email.trim(),
+        college: college.trim() || 'Engineering Institute',
         degree,
-        branch: degree.includes('AI/ML') || degree.includes('AI')
-          ? 'Artificial Intelligence & Machine Learning (AI/ML)'
-          : 'Computer Science & Engineering',
         currentYear,
-        targetCareer: targetRole,
         interests: selectedInterests,
-        readinessScore: 45,
-        xp: 150,
-      };
+      });
+
+      // Save user to active session and multi-user local storage
+      saveUserToStorage(newUser);
 
       // 1. Try Supabase Auth sign up
       await signUpWithSupabaseAuth(email.trim(), password, {
-        name: fullName.trim(),
-        college,
-        degree,
-        currentYear,
+        name: newUser.name,
+        college: newUser.college,
+        degree: newUser.degree,
+        currentYear: newUser.currentYear,
+        branch: newUser.branch,
         interests: selectedInterests,
       }).catch(() => {});
 
-      // 2. Save directly to Supabase Database table
+      // 2. Save directly to Supabase Database user_progress table
       await syncUserProgressToSupabase(newUser).catch(console.warn);
       logUserActivityToSupabase(newUser.email, 'signup', {
-        college,
-        degree,
+        name: newUser.name,
+        college: newUser.college,
+        degree: newUser.degree,
+        branch: newUser.branch,
+        currentYear: newUser.currentYear,
         interests: selectedInterests,
       });
 
       onSignUpSuccess(newUser);
     } catch {
-      const fallbackUser: UserProfile = {
-        ...defaultUserProfile,
+      const fallbackUser = createNewUserProfile({
         name: fullName.trim(),
         email: email.trim(),
-        college,
+        college: college.trim() || 'Engineering Institute',
         degree,
         currentYear,
-      };
+        interests: selectedInterests,
+      });
+      saveUserToStorage(fallbackUser);
       onSignUpSuccess(fallbackUser);
     } finally {
       setIsSubmitting(false);
@@ -177,13 +178,23 @@ export const SignUpPage: React.FC<SignUpPageProps> = ({ onNavigate, onSignUpSucc
       {/* Main Card */}
       <div className="w-full max-w-lg bg-white dark:bg-[#0B1528] rounded-3xl sm:shadow-lg border border-gray-100 dark:border-[#1C2E52] p-6 sm:p-8 z-20 transition-colors">
         {/* Title Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#0F274A] dark:text-white">
-            Create Your <span className="text-[#E59819] dark:text-[#F2B544]">Account</span>
-          </h1>
-          <p className="text-xs sm:text-sm text-[#6B7280] dark:text-gray-400 mt-1">
-            Join RAAH and start your journey today
-          </p>
+        <div className="mb-6 flex items-start justify-between gap-2">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#0F274A] dark:text-white">
+              Create Your <span className="text-[#E59819] dark:text-[#F2B544]">Account</span>
+            </h1>
+            <p className="text-xs sm:text-sm text-[#6B7280] dark:text-gray-400 mt-1">
+              Join RAAH and start your personalized journey
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleFillDemo}
+            className="px-2.5 py-1 rounded-lg bg-[#FEF6E4] dark:bg-[#2A2312] border border-[#F2B544]/40 text-[#B45309] dark:text-[#F2B544] text-[10px] font-bold hover:bg-[#FDE68A]/40 transition-colors cursor-pointer shrink-0"
+            title="Auto-fill Farhan Patel demo details"
+          >
+            ⚡ Demo Student
+          </button>
         </div>
 
         {/* Error Alert */}

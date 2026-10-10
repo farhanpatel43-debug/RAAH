@@ -32,16 +32,21 @@ import { ProjectGeneratorModal } from './components/ProjectGeneratorModal';
 import { DigitalCertificateModal } from './components/DigitalCertificateModal';
 import { WhatShouldIDoNowModal } from './components/WhatShouldIDoNowModal';
 import { Bot, Sparkles, X, Award } from 'lucide-react';
+import {
+  saveUserToStorage,
+  loadActiveUserFromStorage,
+  clearActiveUserSession,
+} from './lib/userStore';
 
 function AppContent() {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
-  // Load initial user state from localStorage or default to Farhan
+  // Load initial user state from localStorage session or default
   const [user, setUser] = useState<UserProfile | null>(() => {
     try {
-      const saved = localStorage.getItem('raah_user');
-      return saved ? JSON.parse(saved) : defaultUserProfile;
+      const saved = loadActiveUserFromStorage();
+      return saved || defaultUserProfile;
     } catch {
       return defaultUserProfile;
     }
@@ -68,22 +73,23 @@ function AppContent() {
   // Sync user updates to localStorage and Supabase database
   useEffect(() => {
     if (user) {
-      localStorage.setItem('raah_user', JSON.stringify(user));
+      saveUserToStorage(user);
       // Auto sync progress to Supabase database in the background
       syncUserProgressToSupabase(user).catch((err) => {
         console.warn('Auto-sync to Supabase queued:', err);
       });
     } else {
-      localStorage.removeItem('raah_user');
+      clearActiveUserSession();
     }
   }, [user]);
 
-  // Initial attempt to fetch fresh user progress from Supabase on mount
+  // Initial attempt to fetch fresh user progress from Supabase on mount for the specific user
   useEffect(() => {
     if (user?.email) {
       fetchUserProgressFromSupabase(user.email).then((remoteUser) => {
-        if (remoteUser && remoteUser.xp >= (user.xp || 0)) {
-          setUser((prev) => (prev ? { ...prev, ...remoteUser } : remoteUser));
+        if (remoteUser && remoteUser.email.toLowerCase() === user.email.toLowerCase()) {
+          setUser(remoteUser);
+          saveUserToStorage(remoteUser);
         }
       }).catch(() => {});
     }
@@ -96,12 +102,14 @@ function AppContent() {
   };
 
   const handleLoginSuccess = (loggedInUser: UserProfile) => {
+    saveUserToStorage(loggedInUser);
     setUser(loggedInUser);
     setCurrentTab('dashboard');
     logUserActivityToSupabase(loggedInUser.email, 'login', { name: loggedInUser.name });
   };
 
   const handleSignUpSuccess = (newUser: UserProfile) => {
+    saveUserToStorage(newUser);
     setUser(newUser);
     setCurrentTab('setup');
     logUserActivityToSupabase(newUser.email, 'signup', {
@@ -111,6 +119,7 @@ function AppContent() {
   };
 
   const handleSaveRoadmap = (updatedUser: UserProfile) => {
+    saveUserToStorage(updatedUser);
     setUser(updatedUser);
     logUserActivityToSupabase(updatedUser.email, 'roadmap_updated', {
       targetCareer: updatedUser.targetCareer,
@@ -119,6 +128,7 @@ function AppContent() {
   };
 
   const handleLogout = () => {
+    clearActiveUserSession();
     setUser(null);
     setCurrentTab('home');
   };

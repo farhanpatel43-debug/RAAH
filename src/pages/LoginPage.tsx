@@ -3,6 +3,12 @@ import { NavTab, UserProfile } from '../types';
 import { RaahLogo } from '../components/RaahLogo';
 import { defaultUserProfile } from '../data/mockData';
 import {
+  createNewUserProfile,
+  saveUserToStorage,
+  getUserFromStorageByEmail,
+  formatNameFromEmail,
+} from '../lib/userStore';
+import {
   Mail,
   Lock,
   ArrowRight,
@@ -12,6 +18,7 @@ import {
   Home,
   CheckCircle2,
   Loader2,
+  Sparkles,
 } from 'lucide-react';
 import { ThemeToggle } from '../components/ThemeToggle';
 import {
@@ -28,13 +35,18 @@ interface LoginPageProps {
 }
 
 export const LoginPage: React.FC<LoginPageProps> = ({ onNavigate, onLoginSuccess }) => {
-  const [email, setEmail] = useState('farhanpatelpatel43@gmail.com');
-  const [password, setPassword] = useState('123456');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState('');
   const [infoMessage, setInfoMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleFillDemo = () => {
+    setEmail('farhanpatelpatel43@gmail.com');
+    setPassword('123456');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,46 +58,69 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigate, onLoginSuccess
     setIsSubmitting(true);
 
     try {
+      const cleanEmail = email.trim().toLowerCase();
+
       // 1. Try Supabase Auth login if configured
-      await loginWithSupabaseAuth(email.trim(), password).catch(() => {});
+      await loginWithSupabaseAuth(cleanEmail, password).catch(() => {});
 
       // 2. Fetch existing user progress from Supabase database
-      const existingUser = await fetchUserProgressFromSupabase(email.trim());
+      const existingUser = await fetchUserProgressFromSupabase(cleanEmail);
 
-      if (existingUser) {
-        logUserActivityToSupabase(existingUser.email, 'login', { method: 'email_password' });
+      if (existingUser && existingUser.email.toLowerCase() === cleanEmail) {
+        saveUserToStorage(existingUser);
+        logUserActivityToSupabase(existingUser.email, 'login', { method: 'supabase_db' });
         onLoginSuccess(existingUser);
         return;
       }
 
-      // 3. Fallback: Initialize user profile based on email
-      const cleanName = email.split('@')[0]
-        ? email.split('@')[0].charAt(0).toUpperCase() + email.split('@')[0].slice(1)
-        : 'Farhan Patel';
+      // 3. Check local user registry (if user previously signed up on this device)
+      const localUser = getUserFromStorageByEmail(cleanEmail);
+      if (localUser) {
+        saveUserToStorage(localUser);
+        logUserActivityToSupabase(localUser.email, 'login', { method: 'local_registry' });
+        onLoginSuccess(localUser);
+        return;
+      }
 
-      const loggedUser: UserProfile = {
-        ...defaultUserProfile,
-        email: email.trim(),
-        name: cleanName === 'Farhanpatelpatel43' ? 'Farhan Patel' : cleanName,
-      };
+      // 4. If this is explicitly Farhan's demo account
+      if (cleanEmail === defaultUserProfile.email.toLowerCase()) {
+        saveUserToStorage(defaultUserProfile);
+        onLoginSuccess(defaultUserProfile);
+        return;
+      }
 
+      // 5. New user sign-in: Create fresh account strictly according to new sign-in info
+      const cleanName = formatNameFromEmail(cleanEmail);
+      const newUser = createNewUserProfile({
+        name: cleanName,
+        email: cleanEmail,
+      });
+
+      saveUserToStorage(newUser);
       // Upsert record to Supabase
-      syncUserProgressToSupabase(loggedUser).catch(console.warn);
-      logUserActivityToSupabase(loggedUser.email, 'login', { method: 'first_login' });
-      onLoginSuccess(loggedUser);
+      syncUserProgressToSupabase(newUser).catch(console.warn);
+      logUserActivityToSupabase(newUser.email, 'login', { method: 'new_signin_created' });
+      onLoginSuccess(newUser);
     } catch {
-      const loggedUser: UserProfile = {
-        ...defaultUserProfile,
-        email: email.trim(),
-        name: 'Farhan Patel',
-      };
-      onLoginSuccess(loggedUser);
+      const cleanEmail = email.trim().toLowerCase();
+      const localUser = getUserFromStorageByEmail(cleanEmail);
+      if (localUser) {
+        onLoginSuccess(localUser);
+      } else {
+        const newUser = createNewUserProfile({
+          name: formatNameFromEmail(cleanEmail),
+          email: cleanEmail,
+        });
+        saveUserToStorage(newUser);
+        onLoginSuccess(newUser);
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDemoLogin = () => {
+    saveUserToStorage(defaultUserProfile);
     onLoginSuccess(defaultUserProfile);
   };
 
@@ -116,12 +151,24 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigate, onLoginSuccess
             <RaahLogo variant="stacked" size="md" />
           </div>
 
-          <h1 className="text-3xl font-extrabold tracking-tight text-[#0F274A] dark:text-white">
-            Welcome <span className="text-[#E59819] dark:text-[#F2B544]">Back</span>
-          </h1>
-          <p className="text-sm text-[#6B7280] dark:text-gray-400 mt-1">
-            Continue your journey with RAAH
-          </p>
+          <div className="w-full flex items-center justify-between">
+            <div className="flex-1 text-center pl-6">
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#0F274A] dark:text-white">
+                Welcome <span className="text-[#E59819] dark:text-[#F2B544]">Back</span>
+              </h1>
+              <p className="text-xs sm:text-sm text-[#6B7280] dark:text-gray-400 mt-1">
+                Continue your journey with RAAH
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleFillDemo}
+              className="px-2.5 py-1 rounded-lg bg-[#FEF6E4] dark:bg-[#2A2312] border border-[#F2B544]/40 text-[#B45309] dark:text-[#F2B544] text-[10px] font-bold hover:bg-[#FDE68A]/40 transition-colors cursor-pointer shrink-0"
+              title="Auto-fill Farhan Patel demo login"
+            >
+              ⚡ Demo
+            </button>
+          </div>
         </div>
 
         {/* Error / Info messages */}

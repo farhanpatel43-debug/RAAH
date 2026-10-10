@@ -170,14 +170,61 @@ export const FourYearJourneyVisualizer: React.FC<FourYearJourneyVisualizerProps>
   user,
   onNavigateToTab,
 }) => {
-  const [selectedSemNumber, setSelectedSemNumber] = useState<number>(5); // Semester 5 current
-  const activeSem = semestersList.find((s) => s.semNumber === selectedSemNumber) || semestersList[4];
+  const userYearNum = user.currentYear?.includes('1st')
+    ? 1
+    : user.currentYear?.includes('2nd')
+    ? 2
+    : user.currentYear?.includes('4th')
+    ? 4
+    : 3;
+  const initialSem = userYearNum * 2 - 1; // 1st year -> Sem 1, 2nd year -> Sem 3, 3rd year -> Sem 5, 4th year -> Sem 7
+
+  const [selectedSemNumber, setSelectedSemNumber] = useState<number>(initialSem);
+  const activeSem = semestersList.find((s) => s.semNumber === selectedSemNumber) || semestersList[initialSem - 1] || semestersList[0];
 
   const yearThemes = [
-    { year: 1, title: 'Year 1: Foundations', icon: GraduationCap, status: 'Completed (100%)', badge: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300' },
-    { year: 2, title: 'Year 2: Core CS', icon: Layers, status: 'Completed (100%)', badge: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300' },
-    { year: 3, title: 'Year 3: Specialization', icon: Sparkles, status: 'In Progress (Sem 5: 60%)', badge: 'bg-[#FEF6E4] text-[#B45309] dark:bg-[#2A2312] dark:text-[#F2B544] ring-2 ring-[#F2B544]/50' },
-    { year: 4, title: 'Year 4: Placements & Launch', icon: Target, status: 'Upcoming', badge: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400' },
+    {
+      year: 1,
+      title: 'Year 1: Foundations',
+      icon: GraduationCap,
+      status: userYearNum > 1 ? 'Completed (100%)' : userYearNum === 1 ? 'In Progress (Active)' : 'Upcoming',
+      badge: userYearNum > 1
+        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
+        : userYearNum === 1
+        ? 'bg-[#FEF6E4] text-[#B45309] dark:bg-[#2A2312] dark:text-[#F2B544] ring-2 ring-[#F2B544]/50'
+        : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
+    },
+    {
+      year: 2,
+      title: 'Year 2: Core CS',
+      icon: Layers,
+      status: userYearNum > 2 ? 'Completed (100%)' : userYearNum === 2 ? 'In Progress (Active)' : 'Upcoming',
+      badge: userYearNum > 2
+        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
+        : userYearNum === 2
+        ? 'bg-[#FEF6E4] text-[#B45309] dark:bg-[#2A2312] dark:text-[#F2B544] ring-2 ring-[#F2B544]/50'
+        : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
+    },
+    {
+      year: 3,
+      title: 'Year 3: Specialization',
+      icon: Sparkles,
+      status: userYearNum > 3 ? 'Completed (100%)' : userYearNum === 3 ? 'In Progress (Active)' : 'Upcoming',
+      badge: userYearNum > 3
+        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
+        : userYearNum === 3
+        ? 'bg-[#FEF6E4] text-[#B45309] dark:bg-[#2A2312] dark:text-[#F2B544] ring-2 ring-[#F2B544]/50'
+        : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
+    },
+    {
+      year: 4,
+      title: 'Year 4: Placements & Launch',
+      icon: Target,
+      status: userYearNum === 4 ? 'In Progress (Active)' : 'Upcoming',
+      badge: userYearNum === 4
+        ? 'bg-[#FEF6E4] text-[#B45309] dark:bg-[#2A2312] dark:text-[#F2B544] ring-2 ring-[#F2B544]/50'
+        : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
+    },
   ];
 
   return (

@@ -30,17 +30,23 @@ export const DigitalCertificateModal: React.FC<DigitalCertificateModalProps> = (
 
   const [copiedLink, setCopiedLink] = useState(false);
 
+  const branchCode = (user.branch || 'ENGR').replace(/[^a-zA-Z]/g, '').slice(0, 4).toUpperCase();
+  const userHash = Math.abs(user.email.split('').reduce((acc, char) => ((acc << 5) - acc) + char.charCodeAt(0), 0))
+    .toString()
+    .slice(0, 4)
+    .padStart(4, '8');
+
   const certificate: DigitalCertificate = {
-    certificateId: `RAAH-CERT-2026-${(user.branch || 'AIML').slice(0, 4).toUpperCase()}-9482`,
+    certificateId: `RAAH-CERT-2026-${branchCode}-${userHash}`,
     studentName: user.name,
     degree: user.degree,
     college: user.college,
     trackTitle: `${user.branch} & ${user.targetCareer} Mastery Track`,
-    issueDate: 'October 8, 2026',
-    honors: 'Distinction (88% Readiness Score & 1,550+ XP)',
+    issueDate: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+    honors: `Distinction (${user.readinessScore}% Readiness Score & ${user.xp.toLocaleString()}+ XP)`,
     readinessScore: user.readinessScore,
     xpEarned: user.xp,
-    verificationCode: 'SHA256:7e8a9d1b0c3f5e2a4d6b8c9e0f1a2b3c',
+    verificationCode: `SHA256:${userHash}a9d1b0c3f5e2a4d6b8c9e0f1a2b3c`,
   };
 
   const verificationUrl = `https://raah.ai/verify/${certificate.certificateId}`;

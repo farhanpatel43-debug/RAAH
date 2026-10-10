@@ -159,7 +159,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
             <div className="overflow-hidden">
               <p className="text-xs font-bold text-[#14264A] dark:text-white truncate">{user.name}</p>
-              <p className="text-[10px] text-[#6B7280] dark:text-gray-400 truncate">{user.currentYear} • AI/ML</p>
+              <p className="text-[10px] text-[#6B7280] dark:text-gray-400 truncate">{user.currentYear} • {user.branch.includes('(') ? user.branch.split('(')[0].trim() : user.branch}</p>
             </div>
           </div>
           <button

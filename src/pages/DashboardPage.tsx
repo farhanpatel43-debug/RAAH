@@ -609,8 +609,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           </div>
 
           <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between text-[11px] text-[#6B7280] dark:text-gray-400">
-            <span>Level 4 • <strong>{user.xp} XP</strong></span>
-            <span className="font-bold text-[#F2B544]">Rank #12 in NIT</span>
+            <span>Level {userLevel.level} • <strong>{user.xp} XP</strong></span>
+            <span className="font-bold text-[#F2B544] truncate max-w-[180px]">
+              {user.college ? user.college : 'College Leaderboard'}
+            </span>
           </div>
         </div>
       </div>
